@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Processor</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f6f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        label {
+            font-weight: bold;
+            color: #555;
+            display: block;
+            text-align: left;
+            margin-bottom: 5px;
+        }
+        input[type="file"], select, input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+        .hidden {
+            display: none;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .image-history {
+            margin-top: 20px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .image-history h2 {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        .image-item {
+            background-color: #f8f9fa;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .image-details {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        .image-details span {
+            font-size: 14px;
+            color: #555;
+        }
+        .image-item a {
+            text-decoration: none;
+            color: #007BFF;
+        }
+        .image-item a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <script>
+        function handleActionChange() {
+            const action = document.querySelector('select[name="action"]').value;
+            const sizeField = document.getElementById('size-field');
+            const degreesField = document.getElementById('degrees-field');
+            const brightnessField = document.getElementById('brightness-field');
+            
+            sizeField.classList.add('hidden');
+            degreesField.classList.add('hidden');
+            brightnessField.classList.add('hidden');
+            
+            if (action === 'resize') {
+                sizeField.classList.remove('hidden');
+            } else if (action === 'rotate') {
+                degreesField.classList.remove('hidden');
+            } else if (action === 'brightness') {
+                brightnessField.classList.remove('hidden');
+            }
+        }
+
+        function loadImageHistory() {
+            fetch('/images')
+                .then(response => response.json())
+                .then(data => {
+                    const imageList = document.getElementById('image-list');
+                    imageList.innerHTML = ''; // Limpiar la lista antes de añadir nuevos elementos
+                    data.images.forEach(image => {
+                        const listItem = document.createElement('div');
+                        listItem.classList.add('image-item');
+
+                        const imageDetails = document.createElement('div');
+                        imageDetails.classList.add('image-details');
+
+                        const title = document.createElement('strong');
+                        title.textContent = `Image processed: ${image.action}`;
+
+                        const actionDetail = document.createElement('span');
+                        actionDetail.textContent = `Action: ${image.action}`;
+                        
+                        const dateDetail = document.createElement('span');
+                        dateDetail.textContent = `Processed on: ${image.date}`;
+
+                        imageDetails.appendChild(title);
+                        imageDetails.appendChild(actionDetail);
+                        imageDetails.appendChild(dateDetail);
+
+                        const downloadLink = document.createElement('a');
+                        downloadLink.href = `/static/processed_images/${image.filename}`;
+                        downloadLink.textContent = 'Download';
+                        downloadLink.download = image.filename;
+
+                        listItem.appendChild(imageDetails);
+                        listItem.appendChild(downloadLink);
+                        imageList.appendChild(listItem);
+                    });
+                });
+        }
+
+        window.onload = loadImageHistory;
+
+        function processImage(event) {
+            event.preventDefault();
+
+            const formData = new FormData(event.target);
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.blob())
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'processed_image.jpg';
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+
+                // Actualizar el historial después de procesar la imagen
+                loadImageHistory();
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Image Processor</h1>
+        <form id="imageForm" onsubmit="processImage(event)" enctype="multipart/form-data">
+            <label for="image">Choose an image</label>
+            <input type="file" name="image" accept="image/*" required>
+
+            <label for="action">Choose an action</label>
+            <select name="action" onchange="handleActionChange()" required>
+                <option value="grayscale">Convert to Grayscale</option>
+                <option value="resize">Resize Image</option>
+                <option value="rotate">Rotate Image</option>
+                <option value="brightness">Adjust Brightness</option>
+                <option value="invert">Invert Colors</option>
+                <option value="blur">Apply Blur</option>
+                <option value="mirror">Mirror Horizontally</option>
+                <option value="flip">Flip Vertically</option>
+            </select>
+
+            <div id="size-field" class="hidden">
+                <label for="size">New Size (e.g., 800x600)</label>
+                <input type="text" name="size" placeholder="e.g. 800x600">
+            </div>
+
+            <div id="degrees-field" class="hidden">
+                <label for="degrees">Rotation Degrees (e.g., 90)</label>
+                <input type="number" name="degrees" placeholder="e.g. 90">
+            </div>
+
+            <div id="brightness-field" class="hidden">
+                <label for="brightness">Brightness (1.0 for original, 0.5 for half)</label>
+                <input type="number" name="brightness" step="0.1" placeholder="e.g. 1.0">
+            </div>
+
+            <button type="submit">Process Image</button>
+        </form>
+
+        <div class="image-history">
+            <h2>Processed Images History</h2>
+            <div id="image-list"></div>
+        </div>
+    </div>
+</body>
+</html>
+
+

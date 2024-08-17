@@ -1,0 +1,90 @@
+{
+	"info": {
+		"_postman_id": "c5fe4b90-7c1c-4567-95b8-fc9c8ae4c422",
+		"name": "API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "35147967"
+	},
+	"item": [
+		{
+			"name": "Upload",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "image",
+							"type": "file",
+							"src": "/C:/Users/AEstrada/Desktop/github.jpg"
+						},
+						{
+							"key": "action",
+							"value": "resize",
+							"type": "text"
+						},
+						{
+							"key": "size",
+							"value": "100x110",
+							"type": "text"
+						}
+					]
+				},
+				"url": "http://localhost:5000/upload"
+			},
+			"response": []
+		},
+		{
+			"name": "Get upload images to download",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var template = `\r",
+							"<style type=\"text/css\">\r",
+							"    .tftable {font-size:14px;color:#333333;width:100%;border-width: 1px;border-color: #87ceeb;border-collapse: collapse;}\r",
+							"    .tftable th {font-size:18px;background-color:#87ceeb;border-width: 1px;padding: 8px;border-style: solid;border-color: #87ceeb;text-align:left;}\r",
+							"    .tftable tr {background-color:#ffffff;}\r",
+							"    .tftable td {font-size:14px;border-width: 1px;padding: 8px;border-style: solid;border-color: #87ceeb;}\r",
+							"    .tftable tr:hover {background-color:#e0ffff;}\r",
+							"</style>\r",
+							"\r",
+							"<table class=\"tftable\" border=\"1\">\r",
+							"    <tr>\r",
+							"        <th>Action</th>\r",
+							"        <th>Date</th>\r",
+							"        <th>Filename</th>\r",
+							"    </tr>\r",
+							"    \r",
+							"    {{#each response.images}}\r",
+							"        <tr>\r",
+							"            <td>{{action}}</td>\r",
+							"            <td>{{date}}</td>\r",
+							"            <td>{{filename}}</td>\r",
+							"        </tr>\r",
+							"    {{/each}}\r",
+							"</table>\r",
+							"`;\r",
+							"\r",
+							"function constructVisualizerPayload() {\r",
+							"    return {response: pm.response.json()}\r",
+							"}\r",
+							"\r",
+							"pm.visualizer.set(template, constructVisualizerPayload());"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": "http://localhost:5000/images"
+			},
+			"response": []
+		}
+	]
+}
